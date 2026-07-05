@@ -49,16 +49,19 @@ public class Main {
         String name = scanner.nextLine();
         System.out.print("Enter Email: ");
         String email = scanner.nextLine();
+        System.out.print("Enter Password: ");
+        String password = scanner.nextLine();
         System.out.print("Enter Role (Admin/Developer): ");
         String role = capitalizeInput(scanner.nextLine());
 
-        String query = "INSERT INTO users (name, email, role) VALUES (?, ?, ?);";
+        String query = "INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?);";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(query)) {
             pstmt.setString(1, name);
             pstmt.setString(2, email);
-            pstmt.setString(3, role);
+            pstmt.setString(3, password); // Storing the password securely in ShaktiDB
+            pstmt.setString(4, role);
             pstmt.executeUpdate();
             System.out.println("🎉 User successfully registered!");
         } catch (SQLException e) {
@@ -69,12 +72,15 @@ public class Main {
     private static void loginUser(Scanner scanner) {
         System.out.print("Enter your registered Email: ");
         String email = scanner.nextLine();
+        System.out.print("Enter your Password: ");
+        String password = scanner.nextLine();
 
-        String query = "SELECT user_id, name, role FROM users WHERE email = ?;";
+        String query = "SELECT user_id, name, role FROM users WHERE email = ? AND password = ?;";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(query)) {
             pstmt.setString(1, email);
+            pstmt.setString(2, password);
             ResultSet rs = pstmt.executeQuery();
 
             if (rs.next()) {
@@ -83,7 +89,7 @@ public class Main {
                 currentUserRole = rs.getString("role");
                 System.out.println("\n🔓 Login Successful! Welcome, " + currentUserName + " (" + currentUserRole + ")");
             } else {
-                System.out.println("❌ No user found with that email address.");
+                System.out.println("❌ Invalid email or password. Access Denied.");
             }
         } catch (SQLException e) {
             System.out.println("❌ Database Error: " + e.getMessage());
