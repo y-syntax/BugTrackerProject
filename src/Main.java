@@ -120,7 +120,8 @@ public class Main {
         System.out.println("\n--- 💻 Developer Workspace ---");
         System.out.println("1. Report a New Bug");
         System.out.println("2. View My Assigned Bugs & Update Status / Add Comment");
-        System.out.println("3. Logout");
+        System.out.println("3. Search & Filter System Backlog"); // New Option!
+        System.out.println("4. Logout");
         System.out.print("Select an option: ");
         
         int choice = scanner.nextInt();
@@ -129,7 +130,8 @@ public class Main {
         switch (choice) {
             case 1: reportBug(scanner); break;
             case 2: viewAndManageMyBugs(scanner); break;
-            case 3: logout(); break;
+            case 3: searchBugsWorkflow(scanner); break; // New Case!
+            case 4: logout(); break;
             default: System.out.println("Invalid option.");
         }
     }
@@ -314,5 +316,53 @@ public class Main {
             }
         }
         return sb.toString().trim();
+    }
+
+	private static void searchBugsWorkflow(Scanner scanner) {
+        System.out.println("\n--- 🔍 Search & Filter Backlog ---");
+        System.out.println("1. Filter by Priority");
+        System.out.println("2. Filter by Status");
+        System.out.print("Select filter type: ");
+        int choice = scanner.nextInt();
+        scanner.nextLine();
+
+        String query = "";
+        String filterValue = "";
+
+        if (choice == 1) {
+            System.out.print("Enter Priority to look for (High/Medium/Low): ");
+            filterValue = capitalizeInput(scanner.nextLine());
+            query = "SELECT bug_id, title, status, priority FROM bugs WHERE priority = ?;";
+        } else if (choice == 2) {
+            System.out.print("Enter Status to look for (Open/Assigned/In Progress/Resolved/Closed): ");
+            filterValue = capitalizeInput(scanner.nextLine());
+            query = "SELECT bug_id, title, status, priority FROM bugs WHERE status = ?;";
+        } else {
+            System.out.println("Invalid selection.");
+            return;
+        }
+
+        System.out.println("\n=== 📋 SEARCH RESULTS ===");
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(query)) {
+            
+            pstmt.setString(1, filterValue);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                boolean found = false;
+                while (rs.next()) {
+                    found = true;
+                    System.out.printf("[%d] %s | Status: %s | Priority: %s\n", 
+                                      rs.getInt("bug_id"), 
+                                      rs.getString("title"), 
+                                      rs.getString("status"), 
+                                      rs.getString("priority"));
+                }
+                if (!found) {
+                    System.out.println("No matching records found matching that filter target.");
+                }
+            }
+        } catch (SQLException e) {
+            System.out.println("❌ Query failed: " + e.getMessage());
+        }
     }
 }
